@@ -1,46 +1,28 @@
-# Puppet command for task 0
-exec { 'Update bash':
-  command  => 'sudo apt-get update',
-  provider => shell
+# puppet manifest preparing a server for static content deployment
+exec { 'apt-get-update':
+  command => '/usr/bin/env apt-get -y update',
 }
-exec { 'Install NGINX':
-  command  => 'sudo apt-get -y install nginx',
-  provider => shell,
-  require  => Exec['Update bash']
+-> exec {'b':
+  command => '/usr/bin/env apt-get -y install nginx',
 }
-exec { 'Create shared path':
-  command  => 'sudo mkdir -p /data/web_static/shared/',
-  provider => shell,
-  require  => Exec['Install NGINX']
+-> exec {'c':
+  command => '/usr/bin/env mkdir -p /data/web_static/releases/test/',
 }
-exec { 'Create test path':
-  command  => 'sudo mkdir -p /data/web_static/releases/test/',
-  provider => shell,
-  require  => Exec['Create shared path']
+-> exec {'d':
+  command => '/usr/bin/env mkdir -p /data/web_static/shared/',
 }
-exec { 'Adding fake HTML':
-  command  => 'echo "FakeHTML" | sudo tee /data/web_static/releases/test/index.html',
-  provider => shell,
-  require  => Exec['Create test path'],
-  returns  => [0, 1]
+-> exec {'e':
+  command => '/usr/bin/env echo "Puppet x Holberton School" > /data/web_static/releases/test/index.html',
 }
-exec { 'Symbolic link':
-  command  => 'sudo ln -sf /data/web_static/releases/test/ /data/web_static/current',
-  provider => shell,
-  require  => Exec['Adding fake HTML']
+-> exec {'f':
+  command => '/usr/bin/env ln -sf /data/web_static/releases/test /data/web_static/current',
 }
-exec { 'Permissions':
-  command  => 'sudo chown -R ubuntu:ubuntu /data/',
-  provider => shell,
-  require  => Exec['Symbolic link']
+-> exec {'h':
+  command => '/usr/bin/env sed -i "/listen 80 default_server/a location /hbnb_static/ { alias /data/web_static/current/;}" /etc/nginx/sites-available/default',
 }
-exec { 'Adding location':
-  command  => 'sudo sed -i "29i\\\n\tlocation \/hbnb_static\/ {\n\t\talias \/data\/web_static\/current\/;\n\t\tautoindex off;\n\t}" /etc/nginx/sites-available/default',
-  provider => shell,
-  require  => Exec['Permissions']
+-> exec {'i':
+  command => '/usr/bin/env service nginx restart',
 }
-exec { 'Restart nginx':
-  command  => 'sudo service nginx restart',
-  provider => shell,
-  require  => Exec['Adding location']
+-> exec {'g':
+  command => '/usr/bin/env chown -R ubuntu:ubuntu /data',
 }
